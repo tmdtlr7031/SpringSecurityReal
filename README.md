@@ -9,6 +9,28 @@
   - https://stackoverflow.com/questions/65796088/how-override-the-default-bcryptpasswordencoder-created-through-passwordencoderfa
  
 ```java
+// DelegatingPasswordEncoder.java
+
+private PasswordEncoder defaultPasswordEncoderForMatches = new UnmappedIdPasswordEncoder();
+
+@Override
+public boolean matches(CharSequence rawPassword, String prefixEncodedPassword) {
+	if (rawPassword == null && prefixEncodedPassword == null) {
+		return true;
+	}
+	String id = extractId(prefixEncodedPassword);
+	PasswordEncoder delegate = this.idToPasswordEncoder.get(id);
+	if (delegate == null) {
+		return this.defaultPasswordEncoderForMatches.matches(rawPassword, prefixEncodedPassword);
+	}
+	String encodedPassword = extractEncodedPassword(prefixEncodedPassword);
+	return delegate.matches(rawPassword, encodedPassword);
+}
+```
+ 
+```java
+// UnmappedIdPasswordEncoder.java
+
 // Default {@link PasswordEncoder} that throws an exception telling that a suitable
 // {@link PasswordEncoder} for the id could not be found.
 private class UnmappedIdPasswordEncoder implements PasswordEncoder {
