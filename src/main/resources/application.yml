@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://localhost:3306/test
+    url: jdbc:mariadb://localhost:3306/security
     username: root
     password: depth1004!
 
@@ -16,13 +16,17 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create
+
     properties:
       hibernate:
         format_sql: true
+        show_sql: true
         jdbc:
           lob:
             non_contextual_creation: true
+
+    database-platform: org.hibernate.dialect.MariaDB103Dialect # JPA? ??? ??? DBMS ?? (-> ?? DB ??? ?? ?? ??? ??)
 
   main:
     allow-bean-definition-overriding: true
