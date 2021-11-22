@@ -1,5 +1,6 @@
 package com.securiy.realsecurity.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
@@ -8,6 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -23,13 +25,19 @@ import java.util.Map;
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
+    @Autowired
+    private UserDetailsService customUserDetailsService;
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        String password = passwordEncoder().encode("1111");
+        // 메모리 방식 인증처리
+//        String password = passwordEncoder().encode("1111");
+//        auth.inMemoryAuthentication().withUser("user").password(password).roles("USER","MANAGER","ADMIN");
+//        auth.inMemoryAuthentication().withUser("manager").password(password).roles("MANAGER","ADMIN");
+//        auth.inMemoryAuthentication().withUser("admin").password(password).roles("ADMIN");
 
-        auth.inMemoryAuthentication().withUser("user").password(password).roles("USER","MANAGER","ADMIN");
-        auth.inMemoryAuthentication().withUser("manager").password(password).roles("MANAGER","ADMIN");
-        auth.inMemoryAuthentication().withUser("admin").password(password).roles("ADMIN");
+        // DB 정보를 통한 인증처리
+        auth.userDetailsService(customUserDetailsService);
 
     }
 
