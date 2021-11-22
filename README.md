@@ -48,7 +48,42 @@ private class UnmappedIdPasswordEncoder implements PasswordEncoder {
 		throw new IllegalArgumentException("There is no PasswordEncoder mapped for the id \"" + id + "\"");
 	}
 }
-
 ```
 
-- 
+
+---
+
+
+- (4) DB 연동 인증 처리(1) - CustomUserDetailsService
+  - 기존에 메모리 방식은 테스트용으로 사용 가능할 것 같다.
+  - UserDetails 인터페이스를 위해 User 클래스를 상속받는 AccountContext 클래스 생성
+  - 스프링 시큐리티가 최종적으로 UserDetailsService르 이용하여 인증처리를 한다.
+  - 여기엔 UserDetails가 필요하다. 그래서 UserDetails를 구현한 User 클래스를 상속받아 커스텀한 AccountContext를 만들게 된 것이다.
+
+  ```java
+   @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        // 메모리 방식 인증처리
+        String password = passwordEncoder().encode("1111");
+        auth.inMemoryAuthentication().withUser("user").password(password).roles("USER","MANAGER","ADMIN");
+        auth.inMemoryAuthentication().withUser("manager").password(password).roles("MANAGER","ADMIN");
+        auth.inMemoryAuthentication().withUser("admin").password(password).roles("ADMIN");
+
+        // DB 정보를 통한 인증처리
+        auth.userDetailsService(customUserDetailsService);
+    }
+  ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
