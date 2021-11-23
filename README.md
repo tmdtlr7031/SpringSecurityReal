@@ -74,16 +74,104 @@ private class UnmappedIdPasswordEncoder implements PasswordEncoder {
     }
   ```
 
+- (5) DB 연동 인증 처리(2) - CustomAuthenticationProvider
+  - 첫번째 생성자는 AuthenticationManager에게 전달할 때 인증필터가 해당 생성자를 통해 사용자 정보를 넘기게 된다.
+  - 반면 두번째 생성자는 인증에 대한 검증이 완료된 경우 사용한다.
+  ```java
+ 	 public UsernamePasswordAuthenticationToken(Object principal, Object credentials) {
+		super(null);
+		this.principal = principal;
+		this.credentials = credentials;
+		setAuthenticated(false);
+	}
 
+	public UsernamePasswordAuthenticationToken(Object principal, Object credentials,
+			Collection<? extends GrantedAuthority> authorities) {
+		super(authorities);
+		this.principal = principal;
+		this.credentials = credentials;
+		super.setAuthenticated(true); // must use super, as we override
+	}
+  ```
+  
+  - 문제발생
+   - CustomAuthenticationProvider를 작성하고 SecurityConfig애서 DI를 통해서 사용하려 했지만 순환참조 오류가 발생했다. (생성자 주입의 중요성!!)
+   - `SecurityConfig`에서 `customAuthenticationProvider`를 DI 하기 위해 `customAuthenticationProvider`를 @Component를 통해 빈으로 등록하지만 `customAuthenticationProvider`에서 `passwordEncoder`를 DI하기 위해 `SecurityConfig`를 바라보기 때문이었다.
+   - @Component를 빼고 `SecurityConfig`에서 별도로 빈을 만들자
+  ```java
+    @Component
+    @RequiredArgsConstructor
+    public class CustomAuthenticationProvider implements AuthenticationProvider {
 
+    private final UserDetailsService customUserDetailsService;
+    private final PasswordEncoder passwordEncoder;
 
+    /**
+     * 인증에 대한 검증 부분
+     * - authentication : 사용자가 입력한 아이디, pw 등이 담겨있음
+     * - id, pw 외 다른 검증도 추가할 수 있다.
+     */
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+	String username = authentication.getName();
+	String password = (String) authentication.getCredentials();
 
+	AccountContext accountContext = (AccountContext) customUserDetailsService.loadUserByUsername(username);
 
+	// 입력한 패스워드와 DB상의 패스워드 일치 여부
+	if (!passwordEncoder.matches(password, accountContext.getPassword())) {
+	    throw new BadCredentialsException("BadCredentialsException");
+	}
 
+	// 최종적으로 인증에 성공한 정보를 담아 Provider를 호출한 AuthenticationProcessingFilter에게 반환
+	UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(accountContext.getAccount(), null, accountContext.getAuthorities());
+	return authenticationToken;
+    }
 
+    /**
+     * 파라미터로 넘어온 authentication이 UsernamePasswordAuthenticationToken과 일치하면
+     * CustomAuthenticationProvider가 인증을 처리한다.
+     */
+    @Override
+    public boolean supports(Class<?> authentication) {
+	return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
+    }
+  }
+  
+  ```
+  ```java
+    @EnableWebSecurity
+    @RequiredArgsConstructor
+    public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
+      private final UserDetailsService customUserDetailsService;
+      private final AuthenticationProvider customAuthenticationProvider;
 
-
-
+      @Override
+      protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+          auth.authenticationProvider(customAuthenticationProvider);
+      }
+      
+      @Bean
+      public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+      }
+    
+    // ------------------------ 변경 후
+    // CustomAuthenticationProvider.java => @Component 제거
+    
+    // SecurityConfig.java
+    // private final AuthenticationProvider customAuthenticationProvider; 제거
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(authenticationProvider());
+    }
+      
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        return new CustomAuthenticationProvider(customUserDetailsService, passwordEncoder());
+    }
+    
+  ```
 
 
