@@ -1,9 +1,12 @@
 package com.securiy.realsecurity.config;
 
+import com.securiy.realsecurity.provider.CustomAuthenticationProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -23,10 +26,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Autowired
-    private UserDetailsService customUserDetailsService;
+    private final UserDetailsService customUserDetailsService;
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -37,7 +40,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //        auth.inMemoryAuthentication().withUser("admin").password(password).roles("ADMIN");
 
         // DB 정보를 통한 인증처리
-        auth.userDetailsService(customUserDetailsService);
+//        auth.userDetailsService(customUserDetailsService);
+
+        auth.authenticationProvider(authenticationProvider());
 
     }
 
@@ -48,11 +53,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         web.ignoring().requestMatchers(PathRequest.toStaticResources().atCommonLocations());
     }
 
-    // 평문인 비밀번호를 암호화
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); // 기본이 bcrypt
-    }
+
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -67,5 +68,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .and()
                 .formLogin()
         ;
+    }
+
+    // 평문인 비밀번호를 암호화
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); // 기본이 bcrypt
+    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        return new CustomAuthenticationProvider(customUserDetailsService, passwordEncoder());
     }
 }
