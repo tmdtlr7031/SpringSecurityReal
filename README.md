@@ -50,7 +50,6 @@ private class UnmappedIdPasswordEncoder implements PasswordEncoder {
 }
 ```
 
-
 ---
 
 
@@ -94,10 +93,13 @@ private class UnmappedIdPasswordEncoder implements PasswordEncoder {
 	}
   ```
   
+  
   - 문제발생
    - CustomAuthenticationProvider를 작성하고 SecurityConfig애서 DI를 통해서 사용하려 했지만 순환참조 오류가 발생했다. (생성자 주입의 중요성!!)
    - `SecurityConfig`에서 `customAuthenticationProvider`를 DI 하기 위해 `customAuthenticationProvider`를 @Component를 통해 빈으로 등록하지만 `customAuthenticationProvider`에서 `passwordEncoder`를 DI하기 위해 `SecurityConfig`를 바라보기 때문이었다.
    - @Component를 빼고 `SecurityConfig`에서 별도로 빈을 만들자
+
+
   ```java
     @Component
     @RequiredArgsConstructor
@@ -173,5 +175,12 @@ private class UnmappedIdPasswordEncoder implements PasswordEncoder {
     }
     
   ```
-
+  - 기존 방식과의 차이점?
+    - `auth.userDetailsService(customUserDetailsService);` 
+      - DaoAuthenticationProvider가 customUserDetailsService를 이용
+      - 인증을 시도하는 사용자의 정보가 DB에 존재하는지를 검증하는 비즈니스 로직을 담당
+    - `auth.authenticationProvider(authenticationProvider());` 
+      - CustomAuthenticationProvider를 통해 customUserDetailsService를 이용
+      - 실제 사용자의 인증 처리를 위한  비즈니스 로직을 구현하는 역할 (customUserDetailsService보다 넓은 개념)
+   - 인증 검증(ex.패스워드 검증)같이 특별한 과정이 필요하다면 Provider를 이용하고 그게 아니라면 DaoAuthenticationProvider만 간단하게 사용해도 무방하다. 아니면 둘 다 사용해도 되고..
 
