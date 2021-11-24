@@ -184,3 +184,75 @@ private class UnmappedIdPasswordEncoder implements PasswordEncoder {
       - 실제 사용자의 인증 처리를 위한  비즈니스 로직을 구현하는 역할 (customUserDetailsService보다 넓은 개념)
    - 인증 검증(ex.패스워드 검증)같이 특별한 과정이 필요하다면 Provider를 이용하고 그게 아니라면 DaoAuthenticationProvider만 간단하게 사용해도 무방하다. 아니면 둘 다 사용해도 되고..
 
+
+---
+
+ - 로그아웃 및 화면 보안처리
+   - LogoutFilter 이용
+     - 해당 필터 적용되는 조건 
+       - HTTP Method POST, 요청 URL이 `/logout`인 경우가 해당 됨
+       - 예외
+         - `http.csrf().disable()` 설정한 경우에는 GET 방식도 LogoutFilter가 처리한다.
+
+   - `http.csrf().disable()` 설정 없이 GET 요청인 경우 ? -> `SecurityContextLogoutHandler` (LogoutFilter도 결국은 이 핸들러 사용한다.)
+     - LoginController의 /logout 메서드 참고
+   
+   - 인증 여부에 따른 메뉴 노출 처리
+   - 타임리프에서는 `sec:authorize="isAnonymous()"` 이런식으로 쓰고 JSP에서는 아래처럼 쓰는 것 같다. 이는 필요할 때 찾아보자.
+     ```html
+     <sec:authorize access="isAuthenticated()">
+       <li class="nav-item"><a class="nav-link text-light" href="<c:url value="/logout"/>">로그아웃</a></li>
+     </sec:authorize>
+     ```
+   
+     - sec태그 이용과 기능을 이용하기 위해선 의존성추가 + 타임리프에 선언이 필요하다.
+       ```java
+       // 타임리프 상단에 추가
+       xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity5" 추가
+       
+       // 의존성(gradle 기준)
+       implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5:3.0.4.RELEASE'
+       ```
+
+  - 인증 부가 기능 (WebAuthenticationDetails, AuthenticationDetailsSource)
+    - 사용자 request에 의해 AuthenticationFilter가 Authentication 객체르 만들고 여기의 details에 해당하는 `WebAuthenticationDetails`를 `AuthenticationDetailsSource`가 생성한다. 
+    - WebAuthenticationDetails에느 기본적으로 remoteAddress, SessionId가 있고 그 외에 뷰에서 넘겨주느 추가적이 파라미터를 받을 수 있다.
+      ```html
+      <!-- login.html -->
+      <form th:action="@{/login_proc}" class="form-signin" method="post">
+          <input th:type="hidden" th:value="secret" name="secret_key">
+              <div class="form-group">
+                  <input type="text" class="form-control" name="username" placeholder="아이디" required="required" autofocus="autofocus">
+              </div>
+              <div class="form-group">
+                  <input type="password" class="form-control" name="password" placeholder="비밀번호" required="required">
+              </div>
+              <button type="submit" class="btn btn-lg btn-primary btn-block">로그인</button>
+       </form>
+      ```
+      ```java
+      public class FormWebAuthenticationDetails extends WebAuthenticationDetails {
+
+	  private String secretKey;
+
+	    // 사용자가 전달하는 추가적인 파라미터들을 저장하는 역할
+	    public FormWebAuthenticationDetails(HttpServletRequest request) {
+	        super(request);
+	        secretKey = request.getParameter("secret_key");
+	    }
+
+	    public String getSecretKey() {
+	        return secretKey;
+	    }
+      }
+	  
+      // CustomAuthenticationProvider 에서 검증처리 할 수 있다.
+      // secretKey 검증
+      FormWebAuthenticationDetails details = (FormWebAuthenticationDetails) authentication.getDetails();
+      String secretKey = details.getSecretKey();
+      if (!"secret".equals(secretKey)) {
+          throw new InsufficientAuthenticationException("InsufficientAuthenticationException");
+      }
+      ```
+    - `FormAuthenticationDetailsSource` 와 `FormWebAuthenticationDetails` 파일 참고
+    
