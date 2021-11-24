@@ -1,9 +1,11 @@
 package com.securiy.realsecurity.provider;
 
+import com.securiy.realsecurity.common.FormWebAuthenticationDetails;
 import com.securiy.realsecurity.domain.AccountContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -32,6 +34,13 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         // 입력한 패스워드와 DB상의 패스워드 일치 여부
         if (!passwordEncoder.matches(password, accountContext.getPassword())) {
             throw new BadCredentialsException("BadCredentialsException");
+        }
+
+        // secretKey 검증
+        FormWebAuthenticationDetails details = (FormWebAuthenticationDetails) authentication.getDetails();
+        String secretKey = details.getSecretKey();
+        if (!"secret".equals(secretKey)) {
+            throw new InsufficientAuthenticationException("InsufficientAuthenticationException");
         }
 
         // 최종적으로 인증에 성공한 정보를 담아 Provider를 호출한 AuthenticationProcessingFilter에게 반환
