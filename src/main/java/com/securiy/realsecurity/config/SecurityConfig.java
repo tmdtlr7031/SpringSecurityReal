@@ -67,7 +67,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .loginPage("/login")
                 .loginProcessingUrl("/login_proc")
                 .authenticationDetailsSource(formAuthenticationDetailsSource)
-                // 순서 조심 : API 설정이 아래에 위치할 수록 위에 위치한 설정을 덮어쓰게 됨. 따라서 defaultSuccessUrl이 위에있으면 제대로 동작 안함
+                // 순서 조심 : API 설정이 아래에 위치할 수록 위에 위치한 설정을 덮어쓰게 됨. 따라서 defaultSuccessUrl이 아래에 있으면 제대로 동작 안함
                 .defaultSuccessUrl("/")
                 .successHandler(customAuthenticationSuccessHandler)
                 .failureHandler(customAuthenticationFailureHandler)
