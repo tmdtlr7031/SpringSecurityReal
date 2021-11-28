@@ -256,3 +256,31 @@ private class UnmappedIdPasswordEncoder implements PasswordEncoder {
       ```
     - `FormAuthenticationDetailsSource` 와 `FormWebAuthenticationDetails` 파일 참고
     
+----
+
+  - 인증 성공 / 실패 핸들러 커스텀
+    - 각각 `SimpleUrlAuthenticationSuccessHandler`, `SimpleUrlAuthenticationFailureHandler` 를 상속받는다.
+    - `CustomAuthenticationSuccessHandler`
+      - `RequestCache` 와 `RedirectStrategy`를 이용한다.
+        - RequestCache의 기본 구현체는 `HttpSessionRequestCache`로 미인증 이용자가 접근했던 정보르 담고있는 `SavedRequest`를 세션에 저장하는 역할을 한다.
+        - 참고로 SavedRequest의 기본 구현체는 `DefaultSavedRequest`이며 Null인 경우도 존재한다. (ex. 인증 전 다른 자원 접근 -> 인증 예외 발생 -> 로그인페이지 = savedRequest 없음)
+        - RedirectStrategy를 통해 인증 성공 시 디폴트 경로 설정과 특정 경로로 sendRedirect할 수 있다.
+          - 단, SecurityConfig의 defaultSuccessUrl이 있으면 설정할 필요 없다.
+          - 추가로 SecurityConfig에 defaultSuccessUrl 설정 시 successHandler 보다 위에 선언해야 한다.
+            - API 설정이 아래에 위치할 수록 위에 위치한 설정을 덮어쓰게 된다. 따라서 defaultSuccessUrl이 successHandler보다 아래에 있으면 제대로 동작 안함
+
+    - `CustomAuthenticationFailureHandler`
+      - `setDefaultFailureUrl("/login?error=true&exception="+errorMessage);` 이렇게 쿼리 파라미터로 정보 넘기는데 Spring의 BindingResult에서 받아줄 수 있는지는 안해봐서 모르겠다고 한다. 나중에 테스트 해보는것도.. 
+      - 추가로 스프링 시큐리티에서 "/login?error=true&exception="+errorMessage 를 "/login"으로 인식하지 않고 문자열 전체를 경로로 인식한다
+      - 따라서 SecurityConfig에 PermitAll 추가해야한다. -> `.antMatchers("/login*").permitAll()`
+      - 인증 실패의 경우 `super.onAuthenticationFailure(request, response, exception);`를 사용하는데 사실 없어도 동작한다. 
+        - 하지만 실패 핸들러쪽의 경우 부모쪽으로 위임하는게 여러모로 편리하여 해당 코드를 사용한다.
+
+
+
+
+
+
+
+
+
