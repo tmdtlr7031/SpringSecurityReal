@@ -1,5 +1,7 @@
 package com.securiy.realsecurity.controller.login;
 
+import com.securiy.realsecurity.domain.Account;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
@@ -12,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 @Controller
+@Slf4j
 public class LoginController {
 
     @GetMapping("/login")
@@ -33,5 +36,18 @@ public class LoginController {
         }
 
         return "redirect:/login";
+    }
+
+    @GetMapping("/denied")
+    public String accessDenied(@RequestParam(value = "exception", required = false) String exception, Model model) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Account account = (Account) authentication.getPrincipal();
+        model.addAttribute("username", account.getUsername());
+        model.addAttribute("exception", exception);
+
+        System.out.println("account.getUsername() = " + account.getUsername());
+        System.out.println("exception = " + exception);
+
+        return "user/login/denied";
     }
 }
