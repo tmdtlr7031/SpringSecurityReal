@@ -276,10 +276,21 @@ private class UnmappedIdPasswordEncoder implements PasswordEncoder {
       - 인증 실패의 경우 `super.onAuthenticationFailure(request, response, exception);`를 사용하는데 사실 없어도 동작한다. 
         - 하지만 실패 핸들러쪽의 경우 부모쪽으로 위임하는게 여러모로 편리하여 해당 코드를 사용한다.
 
+----
 
-
-
-
+ ### [ 비동기 챕터 ] 
+  - 2) 인증 필터 - AjaxAuthenticationFilter
+  ```java
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
+  ```
+  
+  위 소스에서는 굳이 빈으로 안 만들었다. 강사님의 강의 스타일인가 싶었는데 누군가 질의응답을 남겨서 기록한다.
+  > `AuthenticationManager`는 스프링 시큐리티에서 초기화 시 생성하게 된다. 빈이 아니라 일반 객체로!
+  > 스프링 시큐리티는 `HttpSecurity`에 있는 `SharedObject`를 가지고 여기에 객체들을 넣어놓고 참조하는 식으로 운용한다. 
+  > -> 스프링 빈이 아님 또한 Config에서 빈으로 만드는 건 여러 위치에 DI하기 위함이다.
 
 
 
