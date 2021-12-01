@@ -1,0 +1,11 @@
+## http 요청 보내기 (인텔리제이 제공!)
+## Send POST request with body as parameters
+POST http://localhost:8080/api/login
+Content-Type: application/json
+X-Requested-With: XMLHttpRequest
+
+{
+  "username": "user",
+  "password": "1111"
+}
+###

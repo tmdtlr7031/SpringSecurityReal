@@ -1,11 +1,13 @@
 package com.securiy.realsecurity.config;
 
+import com.securiy.realsecurity.filter.AjaxLoginProcessingFilter;
 import com.securiy.realsecurity.handler.CustomAccessDeniedHandler;
 import com.securiy.realsecurity.provider.CustomAuthenticationProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,6 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -27,6 +31,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final AuthenticationDetailsSource formAuthenticationDetailsSource;
     private final AuthenticationSuccessHandler customAuthenticationSuccessHandler;
     private final AuthenticationFailureHandler customAuthenticationFailureHandler;
+
+    /**
+     *  AuthenticationManager는 스프링 시큐리티에서는 초기화 시 생성하게 됨 -> 빈이 아니라 일반 객체로!
+     *  스프링 시큐리티는 HttpSecurity에 있는 SharedObject를 가지고 여기에 객체들을 넣어놓고 참조하는 식으로 운용함.(빈이 아님)
+     *  (여기서 빈으로 만든 부분들은 여러 위치에서 DI하는 용도로 만든 것임)
+     */
+    @Override
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -78,10 +92,21 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http
                 .exceptionHandling()
+                // 스프링 시큐리티는 form형식의 인증 경로만 제공하기 때문에 REST형식인 경우 예외 발생 시 로그인 페이지로 돌아가게 지정한 것
+                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
                 .accessDeniedHandler(accessDeniedHandler())
         ;
 
-//        http.csrf().disable();
+        /**
+         * .addFilterBefore() : 추가하고자 하는 필터가 기존 필터보다 앞에 위치
+         * .addFilter() : 필터들 중 가장 뒤에 위치
+         * .addFilterAfter() : 추가하고자 하는 필터가 기존 필터 뒤쪽
+         * .addFilterAt() : 추가하고자 하는 필터가 기존 필터 위치 대체할 때 이용
+         */
+        http
+                .addFilterBefore(ajaxLoginProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
+
+        http.csrf().disable();
     }
 
     // 평문인 비밀번호를 암호화
@@ -100,5 +125,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         CustomAccessDeniedHandler accessDeniedHandler = new CustomAccessDeniedHandler();
         accessDeniedHandler.setErrorPage("/denied");
         return accessDeniedHandler;
+    }
+
+    @Bean
+    public AjaxLoginProcessingFilter ajaxLoginProcessingFilter() throws Exception {
+        AjaxLoginProcessingFilter ajaxLoginProcessingFilter = new AjaxLoginProcessingFilter();
+        ajaxLoginProcessingFilter.setAuthenticationManager(authenticationManagerBean());
+        return ajaxLoginProcessingFilter;
     }
 }
