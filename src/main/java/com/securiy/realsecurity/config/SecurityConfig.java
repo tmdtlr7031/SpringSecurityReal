@@ -6,6 +6,7 @@ import com.securiy.realsecurity.provider.CustomAuthenticationProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -23,6 +24,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+@Order(1)
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
@@ -92,21 +94,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http
                 .exceptionHandling()
-                // 스프링 시큐리티는 form형식의 인증 경로만 제공하기 때문에 REST형식인 경우 예외 발생 시 로그인 페이지로 돌아가게 지정한 것
-                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
                 .accessDeniedHandler(accessDeniedHandler())
         ;
 
-        /**
-         * .addFilterBefore() : 추가하고자 하는 필터가 기존 필터보다 앞에 위치
-         * .addFilter() : 필터들 중 가장 뒤에 위치
-         * .addFilterAfter() : 추가하고자 하는 필터가 기존 필터 뒤쪽
-         * .addFilterAt() : 추가하고자 하는 필터가 기존 필터 위치 대체할 때 이용
-         */
-        http
-                .addFilterBefore(ajaxLoginProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
-
-        http.csrf().disable();
     }
 
     // 평문인 비밀번호를 암호화
@@ -127,10 +117,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return accessDeniedHandler;
     }
 
-    @Bean
-    public AjaxLoginProcessingFilter ajaxLoginProcessingFilter() throws Exception {
-        AjaxLoginProcessingFilter ajaxLoginProcessingFilter = new AjaxLoginProcessingFilter();
-        ajaxLoginProcessingFilter.setAuthenticationManager(authenticationManagerBean());
-        return ajaxLoginProcessingFilter;
-    }
 }

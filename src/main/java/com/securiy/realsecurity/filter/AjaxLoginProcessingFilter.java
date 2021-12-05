@@ -3,6 +3,7 @@ package com.securiy.realsecurity.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.securiy.realsecurity.domain.AccountDTO;
 import com.securiy.realsecurity.token.AjaxAuthenticationToken;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
@@ -16,7 +17,8 @@ import java.io.IOException;
 
 public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingFilter {
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
 
     // 해당 URL 요청이 오는 경우 동작
     public AjaxLoginProcessingFilter() {
@@ -43,10 +45,6 @@ public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingF
     // 요청방식이 Ajax인 경우
     // 꼭 아래 로직이 아니어도 Ajax를 구분할 수 있는 규칙이 있으면 될 듯 하다.
     private boolean isAjax(HttpServletRequest request) {
-        if("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
-            return true;
-        }else {
-            return false;
-        }
+        return "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
     }
 }
