@@ -293,5 +293,42 @@ private class UnmappedIdPasswordEncoder implements PasswordEncoder {
   > -> 스프링 빈이 아님 또한 Config에서 빈으로 만드는 건 여러 위치에 DI하기 위함이다.
 
 
+---
+
+  - 3) 인증처리자 - AjaxAuthenticationFilter ~ 4) 인증 핸들러 - AjaxAuthenticationSuccessHandler, AjaxAuthenticationFailureHandler
+    - 전체적인 흐름 익숙해지자..!
+      - 필터 -> 토큰 생성(사용자가 입력한 정보 기반으로 미인증상태임) -> 인증매니저에게 위임 -> Provider에게 처리 위임 -> 처리 후 토큰 반환 (인증된 토큰) -> ...
+    - 트러블슈팅
+      - 상황
+        - 폼방식과 Ajax방식(=REST용 서버통신) SecurityConfig 파일로 분리하고 Ajax방식을 테스트를 하던 중 ajax방식임에도 불구하고 폼방식에서 설정한 successHandler가 적용되는 상황
+        - 강의처럼 302 상태코드가 나와야하지만 그렇지 않았다.
+      - 원인
+        - DI 방식을 필드 주입으로 진행하는 강의와는 다르게 생성자 주입으로 하고 있었고 `AuthenticationSuccessHandler`, `AuthenticationFailureHandler`를 구현하고 있었다.
+        - 이때 구현한 내 파일에서 @Component를 선언하여 빈으로 생성했고 `SecurityConfig`에서 주입하고 있었다.
+          ```java
+		  @Order(1)
+		  @EnableWebSecurity
+		  @RequiredArgsConstructor
+		  public class SecurityConfig extends WebSecurityConfigurerAdapter {
+		    private final AuthenticationSuccessHandler customAuthenticationSuccessHandler;
+		    private final AuthenticationFailureHandler customAuthenticationFailureHandler;
+		  }
+          ```
+
+        - 즉, ajax용 성공,실패 핸들러를 빈으로 만들어 `AjaxSecurityConfig`에 DI 하지 않는 이상 인터페이스 `AuthenticationSuccessHandler`, `AuthenticationFailureHandler`는 폼 방식에서 사용하는 핸들러를 주입받아 적용하게 된 것이었다.
+      - 해결
+        - `AjaxAuthenticationSuccessHandler`, `AjaxAuthenticationFailureHandler`를 생성하고 둘 다 @Component를 통해 빈으로 생성
+        - AjaxSecurityConfig에서 DI 하고 테스트 -> 의도한대로 정상 동작함
+
+
+
+
+
+
+
+
+
+
+
 
 
