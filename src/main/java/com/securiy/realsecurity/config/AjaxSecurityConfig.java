@@ -1,6 +1,8 @@
 package com.securiy.realsecurity.config;
 
+import com.securiy.realsecurity.common.AjaxLoginAuthenticationEntryPoint;
 import com.securiy.realsecurity.filter.AjaxLoginProcessingFilter;
+import com.securiy.realsecurity.handler.AjaxAccessDeniedHandler;
 import com.securiy.realsecurity.provider.AjaxAuthenticationProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Order(0)
@@ -32,6 +35,7 @@ public class AjaxSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     private final AuthenticationSuccessHandler ajaxAuthenticationSuccessHandler;
     private final AuthenticationFailureHandler ajaxAuthenticationFailureHandler;
+    private final AjaxAccessDeniedHandler ajaxAccessDeniedHandler;
 
 
     @Override
@@ -44,6 +48,7 @@ public class AjaxSecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .antMatcher("/api/**")
                 .authorizeRequests()
+                .antMatchers("/api/messages").hasRole("MANAGER")
                 .anyRequest().authenticated()
         ;
 
@@ -56,15 +61,34 @@ public class AjaxSecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .addFilterBefore(ajaxLoginProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
 
+        http
+                .exceptionHandling()
+                .authenticationEntryPoint(new AjaxLoginAuthenticationEntryPoint())
+                .accessDeniedHandler(ajaxAccessDeniedHandler); // 인증을 했지만 권한이 없는 경우
+
         http.csrf().disable();
 
-//        http
-//                .exceptionHandling()
-//                // 스프링 시큐리티는 form형식의 인증 경로만 제공하기 때문에 REST형식인 경우 예외 발생 시 로그인 페이지로 돌아가게 지정한 것
-//                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
-//        ;
+//        customConfigurerAjax(http);
+
+        /* customConfigurerAjax 활성화 시 주석처리 */
+        http
+                .exceptionHandling()
+                // 스프링 시큐리티는 form형식의 인증 경로만 제공하기 때문에 REST형식인 경우 예외 발생 시 로그인 페이지로 돌아가게 지정한 것
+                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
+        ;
     }
 
+    private void customConfigurerAjax(HttpSecurity http) throws Exception {
+        http
+                .apply(new AjaxLoginConfigurer<>())
+                .successHandlerAjax(ajaxAuthenticationSuccessHandler)
+                .failureHandlerAjax(ajaxAuthenticationFailureHandler)
+                .setAuthenticationManager(authenticationManagerBean())
+                .loginProcessingUrl("/api/login")
+        ;
+    }
+
+    /* customConfigurerAjax 활성화 시 주석처리 */
     @Bean
     public AjaxLoginProcessingFilter ajaxLoginProcessingFilter() throws Exception {
         AjaxLoginProcessingFilter ajaxLoginProcessingFilter = new AjaxLoginProcessingFilter();
