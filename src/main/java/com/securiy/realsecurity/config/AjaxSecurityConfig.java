@@ -52,30 +52,31 @@ public class AjaxSecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated()
         ;
 
+        http
+                .exceptionHandling()
+                .authenticationEntryPoint(new AjaxLoginAuthenticationEntryPoint())
+                .accessDeniedHandler(ajaxAccessDeniedHandler); // 인증을 했지만 권한이 없는 경우
+
         /**
          * .addFilterBefore() : 추가하고자 하는 필터가 기존 필터보다 앞에 위치
          * .addFilter() : 필터들 중 가장 뒤에 위치
          * .addFilterAfter() : 추가하고자 하는 필터가 기존 필터 뒤쪽
          * .addFilterAt() : 추가하고자 하는 필터가 기존 필터 위치 대체할 때 이용
          */
-        http
-                .addFilterBefore(ajaxLoginProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
-
-        http
-                .exceptionHandling()
-                .authenticationEntryPoint(new AjaxLoginAuthenticationEntryPoint())
-                .accessDeniedHandler(ajaxAccessDeniedHandler); // 인증을 했지만 권한이 없는 경우
+//        http
+//                .addFilterBefore(ajaxLoginProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
 
         http.csrf().disable();
 
-//        customConfigurerAjax(http);
+        customConfigurerAjax(http);
 
-        /* customConfigurerAjax 활성화 시 주석처리 */
-        http
-                .exceptionHandling()
+
+        /* 위에서 커스텀했다.*/
+//        http
+//                .exceptionHandling()
                 // 스프링 시큐리티는 form형식의 인증 경로만 제공하기 때문에 REST형식인 경우 예외 발생 시 로그인 페이지로 돌아가게 지정한 것
-                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
-        ;
+//                .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
+//        ;
     }
 
     private void customConfigurerAjax(HttpSecurity http) throws Exception {
@@ -89,14 +90,14 @@ public class AjaxSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     /* customConfigurerAjax 활성화 시 주석처리 */
-    @Bean
-    public AjaxLoginProcessingFilter ajaxLoginProcessingFilter() throws Exception {
-        AjaxLoginProcessingFilter ajaxLoginProcessingFilter = new AjaxLoginProcessingFilter();
-        ajaxLoginProcessingFilter.setAuthenticationManager(authenticationManagerBean());
-        ajaxLoginProcessingFilter.setAuthenticationSuccessHandler(ajaxAuthenticationSuccessHandler);
-        ajaxLoginProcessingFilter.setAuthenticationFailureHandler(ajaxAuthenticationFailureHandler);
-        return ajaxLoginProcessingFilter;
-    }
+//    @Bean
+//    public AjaxLoginProcessingFilter ajaxLoginProcessingFilter() throws Exception {
+//        AjaxLoginProcessingFilter ajaxLoginProcessingFilter = new AjaxLoginProcessingFilter();
+//        ajaxLoginProcessingFilter.setAuthenticationManager(authenticationManagerBean());
+//        ajaxLoginProcessingFilter.setAuthenticationSuccessHandler(ajaxAuthenticationSuccessHandler);
+//        ajaxLoginProcessingFilter.setAuthenticationFailureHandler(ajaxAuthenticationFailureHandler);
+//        return ajaxLoginProcessingFilter;
+//    }
 
     @Bean
     public AuthenticationProvider ajaxAuthenticationProvider() {

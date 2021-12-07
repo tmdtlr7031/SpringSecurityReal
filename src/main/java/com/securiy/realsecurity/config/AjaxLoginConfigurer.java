@@ -32,7 +32,7 @@ public final class AjaxLoginConfigurer<H extends HttpSecurityBuilder<H>> extends
     public void configure(H http) throws Exception {
 
         if (authenticationManager == null) {
-            authenticationManager = http.getSharedObject(AuthenticationManager.class); // getSharedObject : 객체 담아서 공유할 수 있는 역할
+            authenticationManager = http.getSharedObject(AuthenticationManager.class); // SharedObject : 객체 담아서 공유할 수 있는 역할
         }
 
         // 필터에 셋팅
@@ -40,21 +40,17 @@ public final class AjaxLoginConfigurer<H extends HttpSecurityBuilder<H>> extends
         getAuthenticationFilter().setAuthenticationSuccessHandler(successHandler);
         getAuthenticationFilter().setAuthenticationFailureHandler(failureHandler);
 
-        SessionAuthenticationStrategy sessionAuthenticationStrategy = http
-                .getSharedObject(SessionAuthenticationStrategy.class);
-
+        SessionAuthenticationStrategy sessionAuthenticationStrategy = http.getSharedObject(SessionAuthenticationStrategy.class);
         if (sessionAuthenticationStrategy != null) {
             getAuthenticationFilter().setSessionAuthenticationStrategy(sessionAuthenticationStrategy);
         }
 
-        RememberMeServices rememberMeServices = http
-                .getSharedObject(RememberMeServices.class);
-
+        RememberMeServices rememberMeServices = http.getSharedObject(RememberMeServices.class);
         if (rememberMeServices != null) {
             getAuthenticationFilter().setRememberMeServices(rememberMeServices);
         }
 
-        http.setSharedObject(AjaxLoginProcessingFilter.class, getAuthenticationFilter());
+        http.setSharedObject(AjaxLoginProcessingFilter.class,getAuthenticationFilter());
         http.addFilterBefore(getAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
     }
 
