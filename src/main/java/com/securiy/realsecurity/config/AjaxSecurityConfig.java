@@ -49,6 +49,7 @@ public class AjaxSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatcher("/api/**")
                 .authorizeRequests()
                 .antMatchers("/api/messages").hasRole("MANAGER")
+//                .antMatchers("/api/login").permitAll()
                 .anyRequest().authenticated()
         ;
 
@@ -85,7 +86,8 @@ public class AjaxSecurityConfig extends WebSecurityConfigurerAdapter {
                 .successHandlerAjax(ajaxAuthenticationSuccessHandler)
                 .failureHandlerAjax(ajaxAuthenticationFailureHandler)
                 .setAuthenticationManager(authenticationManagerBean())
-                .loginProcessingUrl("/api/login")
+                .loginProcessingUrl("/api/login") // 로그인 폼에서 로그인 버튼 누르면 동작하는 url -> 리턴값은 컨트롤러 맵핑된 jsp로 가는 듯
+//                .createLoginProcessingUrlMatcher("/api/login")  // 이렇게하면 해당 url 접근 시 필터 동작함
         ;
     }
 
