@@ -1,4 +1,5 @@
 # 스프링시큐리티 실전편
+### 실전프로젝트 -인증 프로세스 Form 인증 구현 ~ 실전프로젝트 - 인증 프로세스 Ajax 인증 구현
 - (3) 사용자 DB등록 및 PasswordEncoder
   - Spring Security 5 부터 평문 암호화르 위해 `PasswordEncoderFactories.createDelegatingPasswordEncoder();`를 이용하여 빠르게 구현 가능 (`DelegatingPasswordEncoder`이용함)
   - 하지만 default 값이 `bcrypt`를 이용하여 인코딩을 하게 된다. 그럼 sha256으로 바꾸고싶다면..?
