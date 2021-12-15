@@ -329,7 +329,7 @@ private class UnmappedIdPasswordEncoder implements PasswordEncoder {
     	  - `.loginProcessingUrl`는 Form인증방식에서 사용하는 것으로 로그인 form에서 action 속성의 값이다. 당시 LoginController에 api/login이 맵핑되어 있지 않았기 때문에 해당 옵션으로 인해 로그인 페이지 HTML값이 응답값으로 리턴된 것 (정확하진 않지만, 이렇게 밖에 추론하는 것 말고는 이해가 안된다.)
     	  - `.createLoginProcessingUrlMatcher("/api/login")`으로 수정하면 의도한대로 응답값을 확인할 수 있다. 
 
-    - 묹제 2) Ajax를 통한 로그인 처리 시 실패 값으로 `window.location = /api/login?error=true (이하 생략)`을 통해 해당 컨트롤러를 타고 처리가 되야하는데 안되는 현상
+    - 문제 2) Ajax를 통한 로그인 처리 시 실패 값으로 `window.location = /api/login?error=true (이하 생략)`을 통해 해당 컨트롤러를 타고 처리가 되야하는데 안되는 현상
        - 원인 : `AjaxLoginProcessingFilter` 생성자 설정
          - DSLs 방식이 아닌 기존방식을 이용 시 해당 필터에는 맵필 URL만 있고 HTTP Method는 null 이었다. 이는 **모든 HTTP Method**에 해당하기 때문에 페이지 이동 시 다시 필터가 가로채고 Ajax요청을 판단하게 된다. 하지만 window.location을 통해 요청이 됐기 때문에 GET방식+해더값 미설정이라 `throw new IllegalStateException("Authentication is not supported")`이 발생한 것
          - `new AntPathRequestMatcher("/api/login", "POST")` 해당 URL 요청이 POST로 올때만 가로채도록 변경.
@@ -339,7 +339,8 @@ private class UnmappedIdPasswordEncoder implements PasswordEncoder {
         - 해당 설정이 빠져있었기 때문에 /api/login 접근 시 인증여부를 확인하게되고 당연히 인증되지 않았기 때문에 이상하게 동작한다. (아마 그냥 로그인 페이지로 떨어지나 그랬을듯?) 따라서 누구나 접근이 가능하도록 permitAll 설정을 추가하여 GET /api/login 시 정상처리 가능하게 처리하자!
 
 
-
+###### QnA (https://www.inflearn.com/questions/364897)
+> SavedRequest는 세션방식이다. 따라서 Ajax방식에서도 SavedRequest 가능하다.
 
 
 
